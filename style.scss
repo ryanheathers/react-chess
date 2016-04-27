@@ -1,0 +1,17 @@
+.row {
+  &:nth-child(odd) .square:nth-child(even) {
+    background: #666;
+  }
+
+  &:nth-child(even) .square:nth-child(odd) {
+    background: #666;
+  }
+}
+
+.square {
+  display: inline-block;
+  padding: 1em;
+  border: 1px solid #000;
+  min-height: 20px;
+  min-width: 20px;
+}
