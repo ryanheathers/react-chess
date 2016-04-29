@@ -57,13 +57,14 @@ class Board extends React.Component {
     super(props);
     this.state = {
       pieces: {},
+      squares: [],
       rows: [],
       cols: [],
-      squares: [],
       currentPlayer: 'white',
       moveInProgress: false,
       movingPiece: null,
-      validMoves: null
+      validMoves: null,
+      notices: {}
     }
     this.handleMove = this.handleMove.bind(this);
     this.handleCommand = this.handleCommand.bind(this);
@@ -99,7 +100,7 @@ class Board extends React.Component {
         }
         squares[counter] = square;
         rows[i][j] = square;
-        cols[i][j] = square;
+        cols[j][i] = square;
         counter++;
       }
     }
@@ -149,8 +150,8 @@ class Board extends React.Component {
 
     // if moveInProgress === true, treat click as setting destination for moving piece
     if (moveInProgress) {
-      if (!movingPiece || !validMoves.includes(target.index)) {
-        return this.cancelMove();
+      if (!validMoves.includes(target.index)) {
+        return this.cancelMove(NOTICE_TYPE.invalidMove);
       }
       else {
         return this.completeMove(target.index);
@@ -158,12 +159,13 @@ class Board extends React.Component {
     }
     // if !moveInProgress, treat click as initiating move
     else {
-      if (!target.piece || target.piece.owner !== currentPlayer) return this.cancelMove();
+      if (!target.piece) return; // if no piece is present, do nothing
+      if (target.piece.owner !== currentPlayer) return this.cancelMove(NOTICE_TYPE.wrongPlayer);
 
       let validMoves = this.refs[target.index].refs.piece.determineValidMoves(target, squares, rows, cols, currentPlayer);
 
       if (!validMoves.length) {
-        return this.cancelMove(); // no valid moves were found...
+        return this.cancelMove(NOTICE_TYPE.noMovesAvailable); // no valid moves were found...
       }
       else {
         this.setState({moveInProgress: true});
@@ -197,16 +199,24 @@ class Board extends React.Component {
     this.setState({validMoves: null});
     this.switchPlayer();
   }
-  cancelMove() {
-    console.log('move cancelled!');
+  cancelMove(notice) {
     this.setState({moveInProgress: false});
     this.setState({movingPiece: null});
     this.setState({validMoves: null});
+
+    let {notices} = this.state;
+    notices = update(this.state.notices, {[notice]: {$set: true}});
+    this.setState({notices: notices}, () => {
+      setTimeout(() => {
+        notices = update(this.state.notices, {[notice]: {$set: false}});
+        this.setState({notices: notices});
+      }, 1000);
+    });
   }
   handleCommand(command) {
     const {pieces, squares, rows, cols, currentPlayer} = this.state;
     // example command: WP1A3
-    if (command.length !== 5) return this.cancelMove();
+    if (command.length !== 5) return this.cancelMove(NOTICE_TYPE.invalidCommand);
 
     // parse command
     command = command.toLowerCase(); // assuming no invalid chars, spot for future check
@@ -215,19 +225,19 @@ class Board extends React.Component {
 
     // derive and validate needed info
     let piece = pieces[pieceId];
-    if (!pieces[pieceId] || piece.owner !== currentPlayer) return this.cancelMove();
+    if (!pieces[pieceId] || piece.owner !== currentPlayer) return this.cancelMove(NOTICE_TYPE.invalidCommand);
 
     let source = squares[piece.location];
     let destination = squares.find((square) => {
       return square.chessId === chessId;
     });
-    if (!destination) return this.cancelMove();
+    if (!destination) return this.cancelMove(NOTICE_TYPE.invalidCommand);
 
     // get valid moves
     let validMoves = this.refs[source.index].refs.piece.determineValidMoves(source, squares, rows, cols, currentPlayer);
 
     if (!validMoves.includes(destination.index)) {
-      return this.cancelMove();
+      return this.cancelMove(NOTICE_TYPE.invalidMove);
     }
     else {
       this.completeMove(destination.index, piece);
@@ -265,43 +275,22 @@ class Board extends React.Component {
 
     return (
       <div className="wrapper">
-        <Commands handleCommand={this.handleCommand}/>
-        <div className="board">
-          {rows.map((row, index) => {
-            return <div className="row" key={index}>{row}</div>
-          })}
-        </div>
+        <h1>
+          {`Current Player: ${this.state.currentPlayer.charAt(0).toUpperCase()}${this.state.currentPlayer.substr(1)}`}
+        </h1>
+        <main className="main">
+          <div className="board">
+            {rows.map((row, index) => {
+              return <div className="row" key={index}>{row}</div>
+            })}
+            <Notice notices={this.state.notices}/>
+          </div>
+          <div className="sidebar">
+            <Commands handleCommand={this.handleCommand}/>
+            <PieceList pieces={this.state.pieces}/>
+          </div>
+        </main>
       </div>
-    );
-  }
-}
-
-class Commands extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: ''
-    }
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
-  handleChange(e) {
-    this.setState({value: e.target.value});
-  }
-  handleSubmit(e) {
-    e.preventDefault();
-    this.props.handleCommand(this.state.value);
-  }
-  render() {
-    return (
-      <form onSubmit={this.handleSubmit}>
-        <input
-          type="text"
-          value={this.state.value}
-          onChange={this.handleChange}
-        />
-        <button type="submit">Enter Command</button>
-      </form>
     );
   }
 }
@@ -326,26 +315,31 @@ class Square extends React.Component {
     this.props.deletePiece(this.props.piece.id, this.props.index);
     this.setState({showDelete: false});
   }
-  cancelDelete() {
+  cancelDelete(e) {
+    e.stopPropagation();
     this.setState({showDelete: false});
   }
   render() {
     let {piece, index, chessId, handleMove} = this.props;
 
-    piece = (piece) ? React.createElement(ChessPieces[piece.type], {ref: 'piece', type: piece.type}) : '';
+    piece = (piece) ? React.createElement(ChessPieces[piece.type], {ref: 'piece', type: piece.type, owner: piece.owner}) : '';
 
     let form = (this.state.showDelete && piece)
       ? <form className="delete-form">
-          <label>Delete Piece?</label>
-          <button type="button" onClick={this.handleDelete}>Yes</button>
-          <button type="button" onClick={this.cancelDelete}>No</button>
+          <p>Delete Piece?</p>
+          <div>
+            <button type="button" onClick={this.handleDelete}>Yes</button>
+            <button type="button" onClick={this.cancelDelete}>No</button>
+          </div>
         </form>
       : '';
 
     return (
       <div className="square" onClick={handleMove.bind(this, index)}>
-        <span>{chessId}</span>
-        <span className="delete-label" onClick={this.startDelete}>X</span>
+        <div className="square-meta">
+          <span className="chess-id">{chessId}</span>
+          {(piece) ? <span className="delete-label" onClick={this.startDelete}></span> : ''}
+        </div>
         {piece}
         {form}
       </div>
@@ -353,7 +347,142 @@ class Square extends React.Component {
   }
 }
 
+class Notice extends React.Component {
+  render() {
+    const {notices} = this.props;
+    var notice = '';
+    if (notices.invalidMove && notices.invalidMove === true) {
+      notice = <div className="notice">Invalid Move<br/><span>Try a different destination</span></div>;
+    }
+    else if (notices.noMovesAvailable && notices.noMovesAvailable === true) {
+      notice = <div className="notice">No Moves Available<br/><span>Use a different piece</span></div>;
+    }
+    else if (notices.invalidCommand && notices.invalidCommand === true) {
+      notice = <div className="notice">Command Not Valid<br/><span>Something is off with your command</span></div>;
+    }
+    else if (notices.wrongPlayer && notices.wrongPlayer === true) {
+      notice = <div className="notice">Not Your Piece<br/><span>Try moving your own piece instead :)</span></div>;
+    }
+
+    return (
+      <div className={`notices ${(!notice) ? 'isHidden' : ''}`}>{notice}</div>
+    );
+  }
+}
+
+class Commands extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: ''
+    }
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+  handleChange(e) {
+    this.setState({value: e.target.value});
+  }
+  handleSubmit(e) {
+    e.preventDefault();
+    this.props.handleCommand(this.state.value);
+    this.setState({value: ''});
+  }
+  render() {
+    return (
+      <div className="command-form">
+      <h3>To Make a Move:</h3>
+      <p>Click on the desired piece and then click on the destination tile.</p>
+      <p>Alternatively, you can enter a chess notation command below.</p>
+        <form onSubmit={this.handleSubmit}>
+          <input
+            type="text"
+            value={this.state.value}
+            onChange={this.handleChange}
+          />
+          <button type="submit">Enter Command</button>
+        </form>
+        <p>Example Command: <b>'wh1c3'</b> moves White's Horse #1 (Knight) to tile C3</p>
+      </div>
+    );
+  }
+}
+
+class PieceList extends React.Component {
+  render() {
+    // TODO: Reconsider this for future optimization - could cache values so that pieceLists are not
+    // fully re-rendered each time this.props.pieces changes
+    let whitePieces = {};
+    let blackPieces = {};
+
+    Object.keys(this.props.pieces).forEach((key) => {
+      let piece = this.props.pieces[key];
+      if (piece.owner === 'white') {
+        if (whitePieces[piece.type]) {
+          whitePieces[piece.type]++;
+        }
+        else {
+          whitePieces[piece.type] = 1;
+        }
+      }
+      else {
+        if (blackPieces[piece.type]) {
+          blackPieces[piece.type]++;
+        }
+        else {
+          blackPieces[piece.type] = 1;
+        }
+      }
+    });
+
+    return (
+      <div className="piece-lists">
+        <table className="piece-list">
+          <thead>
+            <tr>
+              <th colSpan="2">White Pieces</th>
+            </tr>
+          </thead>
+          <tbody>
+          {Object.keys(whitePieces).sort().map((key, index) => {
+            return (
+              <tr className="item" key={index}>
+                <td>{key}</td>
+                <td>{whitePieces[key]}</td>
+              </tr>
+            );
+          })}
+          </tbody>
+        </table>
+
+        <table className="piece-list">
+          <thead>
+            <tr>
+              <th colSpan="2">Black Pieces</th>
+            </tr>
+          </thead>
+          <tbody>
+          {Object.keys(blackPieces).sort().map((key, index) => {
+            return (
+              <tr className="item" key={index}>
+                <td>{key}</td>
+                <td>{blackPieces[key]}</td>
+              </tr>
+            );
+          })}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+}
+
 class ChessPiece extends React.Component {
+  // TODO:
+  // implement check/checkmate
+  // implement pawn promotion
+  // implement en passant
+  // implement castling
+
   moveDiagonal(start, diagonal, direction, currentPlayer) {
     let validMoves = [];
     recurse(diagonal, direction);
@@ -414,7 +543,12 @@ class ChessPiece extends React.Component {
     }
   }
   render() {
-    return <div>{this.props.type}</div>
+    return (
+      <div className="piece">
+        <span className="owner">{this.props.owner}</span>
+        <span className="type">{this.props.type}</span>
+      </div>
+    );
   }
 }
 
@@ -535,18 +669,33 @@ const Rook = class Rook extends ChessPiece {
 const Pawn = class Pawn extends ChessPiece {
   determineValidMoves(start, squares, rows, cols, currentPlayer) {
 
-    // TODO: implement pawn diagonal attack
-
     let validMoves = [];
     // checking for currentPlayer accounts for pawns not allowed to move backwards
     if (currentPlayer === 'white') {
+      // add vertical move
       if (squares[start.index - 8] && !squares[start.index - 8].piece) {
         validMoves.push(start.index - 8);
+      }
+
+      // add diagonal attack moves
+      if (start.topLeft && start.topLeft.piece && start.topLeft.piece.owner !== currentPlayer) {
+        validMoves.push(start.topLeft.index);
+      }
+      else if (start.topRight && start.topRight.piece && start.topRight.piece.owner !== currentPlayer) {
+        validMoves.push(start.topRight.index);
       }
     }
     else {
       if (squares[start.index + 8] && !squares[start.index + 8].piece) {
         validMoves.push(start.index + 8);
+      }
+
+      // add diagonal attack moves
+      if (start.bottomLeft && start.bottomLeft.piece && start.bottomLeft.piece.owner !== currentPlayer) {
+        validMoves.push(start.bottomLeft.index);
+      }
+      else if (start.bottomRight && start.bottomRight.piece && start.bottomRight.piece.owner !== currentPlayer) {
+        validMoves.push(start.bottomRight.index);
       }
     }
 
@@ -556,6 +705,13 @@ const Pawn = class Pawn extends ChessPiece {
 
 let ChessPieces = {
   King, Queen, Bishop, Knight, Rook, Pawn
+};
+
+const NOTICE_TYPE = {
+  noMovesAvailable: 'noMovesAvailable',
+  invalidMove: 'invalidMove',
+  invalidCommand: 'invalidCommand',
+  wrongPlayer: 'wrongPlayer'
 };
 
 export default App;
