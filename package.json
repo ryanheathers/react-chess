@@ -1,14 +1,17 @@
 {
-  "name": "react-chess-app",
+  "name": "react-chess",
   "version": "0.1.0",
-  "description": "Chess app built with React.js",
-  "main": "index.js",
+  "description": "Chess game built with React.js",
+  "author": "Ryan Heathers",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryanheathers/react-chess"
+  },
   "scripts": {
     "start": "webpack-dev-server",
     "build": "webpack"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "react": "^15.0.1",
     "react-addons-update": "^15.0.1",
