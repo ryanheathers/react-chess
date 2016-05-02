@@ -1,3 +1,4 @@
+import React from 'react';
 import ChessPiece from './ChessPiece';
 
 class Queen extends ChessPiece {
@@ -12,6 +13,13 @@ class Queen extends ChessPiece {
 
     validMoves = validMoves.concat(topLeft, topRight, bottomLeft, bottomRight);
     return validMoves;
+  }
+  render() {
+    return (
+      <div className="piece">
+        {(this.props.owner === 'white') ? String.fromCharCode(9813) : String.fromCharCode(9819) }
+      </div>
+    );
   }
 }
 

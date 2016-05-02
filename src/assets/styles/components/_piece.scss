@@ -1,12 +1,9 @@
 .piece {
-    display: flex;
-    flex: 1 1 auto;
-    flex-flow: column nowrap;
-    align-items: center;
-    justify-content: center;
-
-  & .owner,
-  & .type {
-    max-width: 50%;
-  }
+  display: flex;
+  flex: 1 1 auto;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  font-size: 3em;
+  cursor: pointer;
 }

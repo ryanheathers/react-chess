@@ -66,14 +66,6 @@ class ChessPiece extends React.Component {
       }
     }
   }
-  render() {
-    return (
-      <div className="piece">
-        <span className="owner">{this.props.owner}</span>
-        <span className="type">{this.props.type}</span>
-      </div>
-    );
-  }
 }
 
 ChessPiece.propTypes = {

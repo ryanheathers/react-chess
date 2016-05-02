@@ -1,6 +1,6 @@
 import React from 'react';
 import update from 'react-addons-update';
-import NoticeType from '../config/constants';
+import NOTICE_TYPE from '../config/constants';
 import Square from './Square';
 import Notice from './Notice';
 import Command from './Command';

@@ -1,3 +1,4 @@
+import React from 'react';
 import ChessPiece from './ChessPiece';
 
 class King extends ChessPiece {
@@ -31,6 +32,13 @@ class King extends ChessPiece {
         validMoves.push(target.index);
       }
     }
+  }
+  render() {
+    return (
+      <div className="piece">
+        {(this.props.owner === 'white') ? String.fromCharCode(9812) : String.fromCharCode(9818) }
+      </div>
+    );
   }
 }
 

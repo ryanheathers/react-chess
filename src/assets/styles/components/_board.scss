@@ -5,11 +5,11 @@
   border-left: 3px solid $black;
 
   &:nth-child(odd) .square:nth-child(even) {
-    background: $medium-gray;
+    background: $light-gray;
   }
 
   &:nth-child(even) .square:nth-child(odd) {
-    background: $medium-gray;
+    background: $light-gray;
   }
 
   &:first-child {
