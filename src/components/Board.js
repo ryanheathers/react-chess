@@ -229,10 +229,12 @@ class Board extends React.Component {
 
     return (
       <div className="wrapper">
-        <h1>
-          {`Current Player: ${this.state.currentPlayer.charAt(0).toUpperCase()}${this.state.currentPlayer.substr(1)}`}
-        </h1>
-        <main className="main">
+        <header className="main-header">
+          <h1>
+            {`Current Player: ${this.state.currentPlayer.charAt(0).toUpperCase()}${this.state.currentPlayer.substr(1)}`}
+          </h1>
+        </header>
+        <main>
           <div className="board">
             {rows.map((row, index) => {
               return <div className="row" key={index}>{row}</div>

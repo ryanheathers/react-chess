@@ -1,0 +1,29 @@
+.piece-lists {
+  margin-top: 40px;
+}
+
+.piece-list {
+  width: 100%;
+  border: 1px solid $black;
+  margin-bottom: 20px;
+  border-collapse: collapse;
+
+  th {
+    width: 100%;
+    text-align: left;
+    padding: .5em;
+    background: $medium-gray;
+    color: $white;
+    font-weight: 300;
+  }
+
+  tr {
+    &:nth-child(even) {
+      background: $light-gray;
+    }
+  }
+
+  td {
+    padding: .5em;
+  }
+}

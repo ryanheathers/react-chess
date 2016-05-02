@@ -1,0 +1,57 @@
+.row {
+  width: 100%;
+  display: flex;
+  border-right: 3px solid $black;
+  border-left: 3px solid $black;
+
+  &:nth-child(odd) .square:nth-child(even) {
+    background: $medium-gray;
+  }
+
+  &:nth-child(even) .square:nth-child(odd) {
+    background: $medium-gray;
+  }
+
+  &:first-child {
+    border-top: 3px solid $black;
+  }
+
+  // hack - chrome doesn't support last-of-type for .class selectors
+  &:nth-child(8) {
+    border-bottom: 3px solid $black;
+  }
+}
+
+.square {
+  flex: 1 1 0;
+  display: flex;
+  flex-flow: column nowrap;
+  border: 1px solid $black;
+  min-height: 100px;
+  position: relative;
+
+  .square-meta {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .chess-id {
+    font-size: 75%;
+    background-color: $green;
+    color: $white;
+    padding: .2em;
+  }
+
+  .delete-label {
+    padding-right: 5px;
+
+    &::before {
+      content: "x";
+      color: $gray;
+      font-size: 75%;
+      height: 10px;
+      width: 10px;
+      cursor: pointer;
+    }
+  }
+}

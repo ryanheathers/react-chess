@@ -1,0 +1,29 @@
+.notices {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .notice {
+    display: block;
+    background: $blue;
+    color: $white;
+    text-align: center;
+    font-size: 2em;
+    padding: 2em;
+
+    & span {
+      font-size: 85%;
+      font-weight: 300;
+    }
+  }
+
+  &.isHidden {
+    display: none;
+  }
+}
